@@ -1,0 +1,144 @@
+from google.colab import files
+uploaded = files.upload()
+import pandas as pd
+
+df = pd.read_csv("Fake News Detection Dataset.csv")
+print(df.head())
+df.head()
+df.shape
+df.columns
+df.info()
+df.describe()
+print("Missing values:\n", df.isnull().sum())
+print("Duplicate rows:", df.duplicated().sum())
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Plot distribution of Fake vs Real news
+plt.figure(figsize=(6, 5))
+sns.countplot(x='Label', data=df, palette='viridis')
+plt.title("Distribution of Fake vs Real News")
+plt.xlabel('News Category (0 = Fake, 1 = Real)')
+plt.ylabel('Count')
+plt.tight_layout()
+plt.show()
+
+# Use 'Word_Count' to represent text length
+plt.figure(figsize=(8, 5))
+sns.histplot(df['Word_Count'], bins=50, kde=True, color='skyblue')
+plt.title("Distribution of Article Word Count")
+plt.xlabel("Word Count")
+plt.ylabel("Frequency")
+plt.tight_layout()
+plt.show()
+# Set target and features
+target = 'Label'  # 0 = Fake, 1 = Real
+features = ['Word_Count', 'Number_of_Sentence', 'Unique_Words', 'Average_Word_Length']
+
+X = df[features]
+y = df[target]
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+
+# Features and target
+features = ['Word_Count', 'Number_of_Sentence', 'Unique_Words', 'Average_Word_Length']
+target = 'Label'
+
+X = df[features]
+y = df[target]
+
+# Split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a logistic regression model
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# Evaluate
+y_pred = model.predict(X_test)
+print(classification_report(y_test, y_pred))
+from sklearn.metrics import classification_report, accuracy_score
+
+y_pred = model.predict(X_test)
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Classification Report:\n", classification_report(y_test, y_pred))
+from sklearn.metrics import classification_report
+
+# Predict on the test set
+y_pred = model.predict(X_test)
+
+# Print evaluation metrics
+print(classification_report(y_test, y_pred, target_names=['Fake', 'Real']))
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
+# Suppose this is the new data (update values as needed)
+new_article = {
+    'Word_Count': 100,
+    'Number_of_Sentence': 10,
+    'Unique_Words': 90,
+    'Average_Word_Length': 4.8
+}
+
+# Convert to DataFrame
+new_df = pd.DataFrame([new_article])
+
+# Optional: Scale if your model used scaling
+features = ['Word_Count', 'Number_of_Sentence', 'Unique_Words', 'Average_Word_Length']
+scaler = StandardScaler()
+
+# Fit scaler on original data
+scaler.fit(df[features])
+
+# Transform the new input
+new_input_scaled = scaler.transform(new_df[features])
+
+# Now you can use it for prediction
+# Example: prediction = model.predict(new_input_scaled)
+# Predict label for the new article (0 = Fake, 1 = Real)
+predicted_label = model.predict(new_input_scaled)
+
+# Interpret prediction
+label_text = "Real News" if predicted_label[0] == 1 else "Fake News"
+print("📰 Predicted News Category:", label_text)
+!pip install gradio
+import gradio as gr
+
+def predict_news_category(word_count, num_sentences, unique_words, avg_word_length):
+    # Prepare input
+    input_data = {
+        'Word_Count': word_count,
+        'Number_of_Sentence': num_sentences,
+        'Unique_Words': unique_words,
+        'Average_Word_Length': avg_word_length
+    }
+    input_df = pd.DataFrame([input_data])
+    
+    # Optional: scale if needed
+    scaled_input = scaler.transform(input_df)
+    
+    # Predict
+    prediction = model.predict(scaled_input)[0]
+    label_text = "Real News" if prediction == 1 else "Fake News"
+    
+    return f"📰 Predicted Category: {label_text}"
+interface = gr.Interface(
+    fn=predict_news_category,
+    inputs=[
+        gr.Number(label="Word Count"),
+        gr.Number(label="Number of Sentences"),
+        gr.Number(label="Unique Words"),
+        gr.Number(label="Average Word Length"),
+    ],
+    outputs="text",
+    title="Fake News Detector",
+    description="Enter article statistics to predict whether the news is real or fake."
+)
+
+interface.launch()
